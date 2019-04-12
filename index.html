@@ -1,0 +1,404 @@
+<html><head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+      <title>RaSQL (Recursive-aggregate-SQL)</title>
+      <meta name="viewport" content="width=device-width">
+
+      <!-- syntax highlighting CSS -->
+	  <link href="css/prism.css" type="text/css" rel="stylesheet" />
+      
+      <!-- Custom CSS -->
+      <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+      <link rel="stylesheet" type="text/css" href="css/main.css"> 
+
+      <!--<link rel="shortcut icon" href="#">-->
+	  
+  </head>
+  <body>
+    <!-- Fixed navbar -->
+    <div class="navbar navbar-default navbar-static-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <!--a class="navbar-brand" href="#">
+            <img src="" alt="" class="logo">
+          </a-->
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+<!--li>
+  <a href="#">People</a>
+</li-->
+
+<li>
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Papers &amp; Projects <span class="caret"></span></a>
+  <ul class="dropdown-menu" role="menu">
+
+ <li><a href="#">Projects</a></li>
+
+ <li><a href="#">Publications</a></li>
+
+ <li><a href="#">Source Code</a></li>
+
+  </ul>
+</li>
+
+<li>
+  <a href="#">Use Cases</a>
+</li>
+
+<!--li class="active dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Documentation <span class="caret"></span></a>
+  <ul class="dropdown-menu" role="menu">
+    
+  <li class="dropdown-header">DOC1</li>
+      <li><a href="#">1.1</a></li>
+      <li><a href="#">1.2</a></li>
+
+  <li class="dropdown-header">DOC2</li> 
+      <li><a href="#">2.1</a></li>     
+      <li><a href="#">2.2</a></li>  
+    
+  <li class="dropdown-header">DOC3</li>  
+      <li><a href="#">2.1</a></li>
+      <li><a href="#">3.2</a></li>    
+  </ul>
+</li-->
+
+<li>
+  <a href="#">Acknowledgments</a>
+</li>
+
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+    <div class="container">
+      <h1 id="intro">RaSQL (Recursive-aggregate-SQL)</h1>
+
+<h2 id="intro">1. Introduction</h2>
+
+<p>RaSQL language is an extension of the current SQL standard by allowing the use of the
+aggregates such as <code class="highlighter-rouge">min</code>, <code class="highlighter-rouge">max</code>, <code class="highlighter-rouge">count</code> and <code class="highlighter-rouge">sum</code> in the <i>Common Table Expression</i> (<strong>CTE</strong>) by which recursive queries can be expressed in the current standard.
+The exclusion of aggregates from the Recursive CTE of current standards was largely due to concerns about semantics and implementation caused by the non-monotonic nature of aggregates, since this can compromise the least-fixpoint semantics of these queries.
+Therefore, the current SQL standard merely supports queries that are stratified w.r.t. aggregates, i.e., the recursive queries (with no aggregates) produce their results first and only after that the aggregates can be applied.</p>
+
+<p>Fortunately, it was recently shown that recursive queries with aggregates that satisfy a <i>Pre-Mappability</i> <strong>PreM</strong> condition produce the same results as the stratified program; thus they are semantically equivalent but evaluate much more efficiently than their stratified counterparts - and actually they are safe 
+in many situations when the stratified queries are not.
+Moreover, by using <code class="highlighter-rouge">min</code>, <code class="highlighter-rouge">max</code>, <code class="highlighter-rouge">count</code> and <code class="highlighter-rouge">sum</code> in programs that satisfy PreM, we can write queries that express most polynomial-time algorithms of frequent usage.</p>
+
+<h2 id="syntax-and-semantics">2. Language Syntax and Semantics</h2>
+
+<p>We use the classical <i>Bill of Materials</i> (<strong>BOM</strong>) example, an important recursive query application in <strong>SQL:99</strong>, to illustrate the syntax and semantics of RaSQL and the PreM property.
+In our simple version of BOM, we have the following two base relations:
+
+<pre><code class="language-sql">assbl(Part, Spart)  
+basic(Part, Days)</code></pre></p>
+
+<p>For each item, the <code class="highlighter-rouge">assbl</code> relation describes its immediate subparts. Not all items are assembled: basic parts are purchased directly from external suppliers and will be delivered in a certain number of days, which is described in the <code class="highlighter-rouge">basic</code> table.
+Without loss of generality, we assume a part will be ready the very same day when its last subpart arrives. Thus, the number of days required for  
+the an item to be ready is the <strong>maximum</strong> day when each of its subparts is delivered. </p>
+
+<p>In SQL:99, the BOM query can be expressed as follows:
+
+
+<pre><code class="language-sql">/*Q1: Days Till Delivery by a Stratified Program*/
+WITH recursive waitfor(Part, Days) AS    	
+	(SELECT Part, Days FROM basic)
+		UNION 
+	(SELECT assbl.Part, waitfor.Days
+	FROM assbl, waitfor
+	WHERE assbl.Spart = waitfor.Part)
+SELECT Part, max(Days) FROM waitfor GROUP BY Part
+</code></pre></p>
+
+		
+<p>RaSQL still supports this query, but also supports an equivalent and much more efficient version as below.
+
+
+<pre><code class="language-sql">/*Q2: The Equivalent Endo-Max Program*/
+WITH recursive waitfor(Part, max() as Days) AS
+   (SELECT Part, Days FROM basic)
+      UNION 
+   (SELECT assbl.Part, waitfor.Days
+    FROM assbl, waitfor
+    WHERE assbl.Spart = waitfor.Part)
+SELECT Part, Days FROM waitfor
+</code></pre></p>
+
+
+<p>Note that from a syntax point of view, RaSQL query only makes a small change to replace the <strong>stratified max</strong> (stratified aggregate means it can only be applied to the result of recursive evaluation, not within the recursive evaluation process) used in <code class="highlighter-rouge">Q1</code> by the <code class="highlighter-rouge">max</code> aggregate in the recursive CTE head of <code class="highlighter-rouge">Q2</code>.
+However, it is non-trivial to show that <code class="highlighter-rouge">Q1</code> and <code class="highlighter-rouge">Q2</code> are equivalent semantically and evaluate to the same result, which is discussed below. </p>
+
+<h3 id="cc">2.1. Semantics:</h3>
+The semantics for query <code class="highlighter-rouge">Q1</code> and <code class="highlighter-rouge">Q2</code> are defined by <i>naive fixpoint evaluation</i> shown in Algorithm 1 and 2,  where the following abbreviations are used: </p>
+
+<code class="highlighter-rouge">wf = waitfor</code><br/> 
+<code class="highlighter-rouge">&#8904; = &#8904; <sub>(assbl.Spart=wf.Part)</sub></code><br/> 
+<code class="highlighter-rouge">&#120587; = &#120587; <sub>(assbl.Part=wf.Days)</sub></code><br/> 
+<code class="highlighter-rouge">max = <sub>Part</sub> max <sub>Days</sub></code><br/> 
+
+<img src="algorithms.png" alt="Algorithms" class="responsive">
+
+<p>We denote the <i>Relational Algebra</i> <strong>(RA)</strong> expression used in line 5 of Algorithm 1 as <code class="highlighter-rouge">T</code>, which derives the new <code class="highlighter-rouge">wf'</code> from the old <code class="highlighter-rouge">wf</code>. The operators used by <code class="highlighter-rouge">T</code> are <i>union</i>, <i>join</i> and <i>project</i>, which are monotonic and guarantees that when <code class="highlighter-rouge">wf'=wf</code>, we obtain the <strong>least fixpoint</strong> solution of equation <code class="highlighter-rouge">wf=T(wf)</code>, which defines the formal semantics of the Recursive CTE <code class="highlighter-rouge">Q1</code>.
+The last line in <code class="highlighter-rouge">Q1</code> contains a non-monotonic <code class="highlighter-rouge">max</code> aggregate which is applied to <code class="highlighter-rouge">wf</code> when the fixpoint <code class="highlighter-rouge">wf=T(wf)</code> is reached. This computation is performed at  line 7 of Algorithm 1, which computes the perfect-model for query <code class="highlighter-rouge">Q1</code> that is stratified w.r.t. <code class="highlighter-rouge">max</code>.</p>
+
+<p>Algorithm 2 shows the naive-fixpoint evaluation for <code class="highlighter-rouge">Q2</code>. The <code class="highlighter-rouge">max</code> aggregate has been moved from the final statement in <code class="highlighter-rouge">Q1</code> to the head of the Recursive CTE in <code class="highlighter-rouge">Q2</code>.
+Thus the <code class="highlighter-rouge">max</code>aggregate which was in line 7 of Algorithm 1 has now been moved  to line 1 and 5 of Algorithm 2 - i.e., lines that specify the initial and iterative computation of <code class="highlighter-rouge">wf</code>.</p>
+
+<p>This example illustrates that supporting aggregates in the <i>WITH recursive</i> clause requires only simple extensions at the syntax level, and techniques such as semi-naive fixpoint and magic sets also require simple extensions when aggregates are allowed in recursion. However aggregates in recursion raise major semantics issues caused by their non-monotonic nature.
+Fortunately the recent introduction of the PreM property has enabled much progress on this problem. In fact, the PreM holds for this example which indicates <code class="highlighter-rouge">Q1</code> and <code class="highlighter-rouge">Q2</code> will produce the same results (concrete semantics) and <code class="highlighter-rouge">Q2</code> has a minimal fixpoint semantics that is equivalent to the perfect model semantics of <code class="highlighter-rouge">Q1</code> (abstract semantics). </p>
+
+<!--
+<h3 id="cc">2.2. The PreM property:</h3>
+<p>If <code class="highlighter-rouge">T(R<sub>1</sub>, &hellip;, R<sub>k</sub>)</code> is a function defined by RA we say that a constraint <code class="highlighter-rouge">&gamma;</code>, is PreM to <code class="highlighter-rouge">T(R<sub>1</sub>, &hellip;, R<sub>k</sub>)</code> when the following property holds: <code class="highlighter-rouge">&gamma;(T(R<sub>1</sub>, &hellip;, R<sub>k</sub>)) =  &gamma;(T(&gamma;(R<sub>1</sub>), &hellip;, &gamma;(R<sub>k</sub>)))</code></p>
+<br/> 
+
+PreM for <strong>union</strong> has long been recognized and used as a cornerstone for parallel databases and <i>MapReduce</i>. Moreover the PreM property also holds
+for <strong>join</strong> and other operators, which provides a general solution to the semantic problem of having aggregates in recursive queries.</p>
+
+<p>Consider the RA expression <code class="highlighter-rouge">T</code> used in line 5 of Algorithm 2, which computes the new value of <code class="highlighter-rouge">wf'</code> from its old value <code class="highlighter-rouge">wf</code>.
+The PreM property holds for <code class="highlighter-rouge">max</code> if <code class="highlighter-rouge">max(T(wf)) = max(T(max(wf)))</code>, i.e. if the following relational expressions are equivalent:
+
+
+<pre><code class="language-sql">max(&#120587; (assbl(Spart,Part) &#8904; wf(Part,Days)))= max(&#120587; (assbl(Spart,Part) &#8904; max(wf(Part,Days))))</pre></code></p>
+
+
+<p>This PreM equality 
+ states  that the <code class="highlighter-rouge">max</code> waitfor days for a part is the <code class="highlighter-rouge">max</code>  of the max of days for each of its subparts.
+ For simple queries such as this, proving the PreM property is  straightforward. Moreover, powerful techniques are available for proving that  complex expressions of RA and arithmetic operators are PreM w.r.t. extrema and other aggregates.</p>
+
+
+<p>With the PreM property holding, we can now observe that <code class="highlighter-rouge">max(wf(Part,Days))</code> simply denotes the application of max to the previous step in the computation of Algorithm 1, by applying the join and the PreM rule interchangeably, we can derive Algorithm 2 from Algorithm 1: 
+</br>
+</br>
+<code class="highlighter-rouge">  max(wf<sub>n</sub>(Part,Days))</code> <br/> 
+<code class="highlighter-rouge">= max(&#120587; (assbl(Spart,Part) &#8904; wf<sub>n-1</sub>(Part,Days)))</code> <br/> 
+<code class="highlighter-rouge">= max(&#120587; (assbl(Spart,Part) &#8904; max(wf<sub>n-1</sub>(Part,Days)))</code> <br/> 
+<code class="highlighter-rouge">= max(&#120587; (assbl(Spart,Part) &#8904; </code> <br/> 
+<code class="highlighter-rouge">  max(&#120587; (assbl(Spart,Part) &#8904; max(wf<sub>n-2</sub>(Part,Days))))</code> <br/>  
+<code class="highlighter-rouge">  &hellip; </code>  <br/> 
+<code class="highlighter-rouge">= max(&#120587; (assbl(Spart,Part) &#8904; &hellip; </code>  <br/> 
+<code class="highlighter-rouge">  max(&#120587; (assbl(Spart,Part) &#8904; max(basic))))</code></br> 
+(Due to limited space, union is omitted, given that PreM holds for union) <br/> 
+</p>
+
+<p>Symmetrically, if we start from Algorithm 2, we  see that <code class="highlighter-rouge">max(wf(Part,Days))</code>, i,e., the max applied to the previous step in the iteration, can be removed without changing the result.  Therefore, starting at line 2, and repeating this reasoning  for each successive step, we can remove each max from Algorithm 2 - except the one at the last step, that  will actually be applied at line 7. In  other words, we find that PreM allows us to transform Algorithm 1 into Algorithm 2 and vice-versa, thus providing a robust proof of the equivalence of  the operational semantics of Q1 and Q2. 
+We also have that at the pure declarative level, the abstract semantics of Q1 and Q2 coincide, since the minimal fixpoint semantics for Q2 coincides with the perfect model of Q1.</p>
+
+<p>In addition to  min and max, the PreM condition entails the use of count and sum in recursion.
+This is because, the count can be modeled as the max applied on the continuous monotonic count which can be freely used in recursion, and similar property hold for the sum of positive numbers. Thus for our BOM example, we can use a query similar to Q2 to efficiently compute the count of items used in an assembly, or to sum their costs. </p>
+
+-->
+
+<h2 id="examples">3. Examples</h2>
+<p>We provide a list of example queries expressible in RaSQL: Example 1-3 are classical graph queries; Example 4-8 demonstrate the power of aggregates in recursion to a broad range of application scenarios.</p>
+
+
+<h3 id="cc">3.1. Single-Source-Shortest-Path (SSSP):</h3>
+<p>
+<pre><code class="language-sql">/*Base tables:*/ 
+edge(Src: int, Dst: int, Cost: double)
+
+WITH recursive sp (Dst, min() AS Cost) AS
+  (SELECT 1, 0)
+   UNION
+  (SELECT edge.Dst, sp.Cost + edge.Cost FROM sp, edge
+   WHERE sp.Dst = edge.Src)
+SELECT Dst, Cost FROM sp
+</code></pre>
+
+The <strong>Single-Source-Shortest-Path (sssp)</strong> query finds paths with minimal costs from a given source node to all other nodes in the graph. The base relation <code class="highlighter-rouge">edge(Src, Dst, Cost)</code> describes all weighted directed edges in the graph. In this example, the sp relation is initialized with the source node 1. The cost to other nodes are iteratively computed by joining the existing weighted paths with the base relation edge, and the <code class="highlighter-rouge">min</code> aggregation is used to find the minimal path. </p>
+
+
+<h3 id="cc">3.2. Connected-Components (CC):</h3>
+<p>
+<pre><code class="language-sql">/*Base tables:*/
+edge(Src: int, Dst: int)
+
+WITH recursive cc (Src, min() AS CmpId) AS
+  (SELECT Src, Src FROM edge)
+   UNION
+  (SELECT edge.Dst, cc.CmpId FROM cc, edge
+	WHERE cc.Src = edge.Src)
+SELECT count(distinct cc.CmpId) FROM cc
+</code></pre>
+
+The idea of the <strong>Connected-Components</strong> query is label propagation: In the base case, each node is initially assigned its own <code class="highlighter-rouge">id</code> as the <code class="highlighter-rouge">CmpId</code>; In the recursive case, each node is receiving <code class="highlighter-rouge">CmpId</code> propagated from its neighbors in each iteration. The <code class="highlighter-rouge">min</code> aggregation restricts the <code class="highlighter-rouge">CmpId</code> of a node to be the minimal id received. The final result is calculated by counting the distinct number of <code class="highlighter-rouge">CmpId</code>s as all nodes within a single connected component will have the same (minimal) <code class="highlighter-rouge">CmpId</code> when the fixpoint is reached. </p>
+
+
+<h3 id="cc">3.3. Count Paths:</h3>
+<p>
+<pre><code class="language-sql">/*Base tables:*/ 
+edge(Src: int, Dst: int)
+
+WITH recursive cpaths (Dst, sum() AS Cnt) AS
+  (SELECT 1, 1)
+   UNION
+  (SELECT edge.Dst, cpaths.Cnt FROM cpaths, edge
+   WHERE cpaths.Dst = edge.Src)
+SELECT Dst, Cnt FROM cpaths
+</code></pre>
+
+The <strong>Count Paths</strong> query computes number of paths from a node to all nodes in a graph. Given the start node, the base case initializes the count to itself as 1. In the recursive case, the number of paths from the start node to another node is iteratively computed by adding up the path count from the start node to an intermediate node, which directly connects to the destination code.</p>
+
+
+<h3 id="cc">3.4. Delivery (BOM):</h3>
+<p>
+<pre><code class="language-sql">/*Base tables:*/
+basic(Part: int, Days: int)
+assbl(Part: int, Sub: int)
+		 
+WITH recursive actualdays (Part, max() AS Mdays) AS
+  (SELECT basic.Part, basic.Days FROM basic)
+   UNION
+  (SELECT assbl.Part, actualdays.Mdays
+   FROM assbl, actualdays
+   WHERE assbl.Sub = actualdays.Part)
+SELECT Part, Mdays FROM actualdays
+</code></pre>
+
+The <strong>delivery</strong> query computes the number of days until delivery for items in the application of BOM (Bill of materials). An item is either a basic item or needs to be assembled from other items. The basic item is represented by the base relation <code class="highlighter-rouge">basic(Part, Days)</code>, and the assembling relationship between items is represented by <code class="highlighter-rouge">assbl(Part, Sub)</code>.
+
+The basic item is delivered in pre-given days and the assembled item is delivered as soon as all its sub components are delivered (assuming assembling does not take extra days). In the base case, it computes the delivery days for all basic items. In the recursive case, it derives the delivery days for each item that needs assembling by finding the maximum delivery days among all its sub components. </p>
+
+
+<h3 id="cc">3.5. Management:</h3>
+<p>
+<pre><code class="language-sql">/*Base tables:*/ 
+report(Emp: int, Mgr: int)
+
+WITH recursive empCount (Mgr, count() AS Cnt) AS
+  (SELECT report.Emp, 1 FROM report)
+   UNION
+  (SELECT report.Mgr, empCount.Cnt
+   FROM empCount, report
+   WHERE empCount.Mgr = report.Emp)
+SELECT Mgr, Cnt FROM empCount
+</code></pre>
+
+The <strong>management</strong> query calculates the total number of employees that a manager directly/indirectly manages in a large corporation. The base relation <code class="highlighter-rouge">report(Emp, Mgr)</code> describes the relationship between an employee and his/her manager. In the base case, the employee count for everyone is initialized to 1 (him/herself).
+In the recursive case, the employee count of a manager is iteratively computed by adding up the employee count of his/her direct reporters.</p>
+
+
+<h3 id="cc">3.6. MLM Bonus:</h3>
+<p>
+<pre><code class="language-sql">/*Base tables:*/ 
+sales(M: int, P: double)
+sponsor(M1: int, M2: int)
+			  
+WITH recursive bonus(M, sum() as B) AS
+  (SELECT M, P*0.1 FROM sales)
+   UNION
+  (SELECT sponsor.M1, bonus.B*0.5 FROM bonus, sponsor
+   WHERE bonus.M = sponsor.M2)
+SELECT M, B FROM bonus
+</code></pre>
+
+Some companies adopt a multi-level marketing model to sell products, i.e. salesmen in such a company form a pyramid hierarchy: new members are recruited into the company by old members (sponsors), and get products from their sponsors. To incentive its members to recruit more people to sell more products, the company rewards each member by the bonus. The bonus is not only based on his/her own personal sales, but also the sales of each member in the network that he/she directly/indirectly sponsored.
+
+The query calculates the bonus that such a company needs to distribute to its members. The <code class="highlighter-rouge">sales</code> relation describes the gross profit <code class="highlighter-rouge">P</code> that each member makes, and the <code class="highlighter-rouge">sponsor</code> relation denotes the sponsor relationship. In the base case, it calculates the bonus that a member earns through the products that sold by himself/herself . In the recursive case, it calculate the bonus that derived from the sales of each member that he/she directly/indirectly sponsors.</p>
+
+
+<h3 id="cc">3.7. Interval Coalesce:</h3>
+<p>
+<pre><code class="language-sql">/*Base tables:*/ 
+inter(S: int, E: int)
+
+CREATE VIEW lstart(T) AS
+  (SELECT a.S FROM inter a, inter b
+   WHERE a.S &le; b.E
+   GROUP BY a.S HAVING a.S = min(b.S))
+
+WITH recursive coal (S, max() AS E) AS
+  (SELECT lstart.T, inter.E FROM lstart, inter
+   WHERE lstart.T = inter.S)
+   UNION
+  (SELECT coal.S, inter.E FROM coal, inter
+   WHERE coal.S &le; inter.S AND inter.S &le; coal.E)
+SELECT S, E FROM coal
+</code></pre>
+
+The <strong>Interval Coalesce</strong> query finds the smallest set of intervals that cover input intervals. It is one of the most frequently used queries in temporal databases. However, it is notoriously difficult to write correctly in SQL.
+Here, we express it succinctly using RaSQL with the help of <code class="highlighter-rouge">max</code> aggregate.
+
+In the first part, a non-recursive view called <code class="highlighter-rouge">lstart</code> is created to find all left start points of intervals that are not covered by other intervals (except itself), using <strong>self-join</strong> of the base relation <code class="highlighter-rouge">inter(S, E)</code>. In the second part, the recursive view <code class="highlighter-rouge">coal(S, E)</code>, which represents the final coalesced intervals,
+is computed by iteratively extending the end points of intervals having the left starting points in <code class="highlighter-rouge">lstart</code> through merging other intervals which cover these end points.</p>
+
+ 
+<h3 id="cc">3.8. Party Attendance:</h3>
+<p>
+<pre><code class="language-sql">/*Base tables:*/ 
+organizer(OrgName: str)
+friend(Pname: str, Fname: str)
+			  
+WITH recursive attend(Person) AS
+  (SELECT OrgName FROM organizer)
+   UNION
+  (SELECT Name, Ncount FROM cntfriends
+   WHERE Ncount >= 3),
+recursive cntfriends(Name, count() AS Ncount) AS
+  (SELECT friend.FName, friend.Pname
+   FROM attend, friend
+   WHERE attend.Person=friend.Pname)
+SELECT Person FROM attend
+</code></pre>
+
+More complex queries can be expressed in the <strong>mutual recursion</strong> fashion - the definition of a recursive relation includes references to other recursive relations. 
+In this example, we want to know people who will attend the party - a person will attend the party if and only if three or more of his/her friends attend, or he/she is the organizer. The <code class="highlighter-rouge">attend</code> relation records people who will attend the party. The <code class="highlighter-rouge">cntfriends</code> relation records the number of a person's friends who will attend the party.
+These two relations are mutual recursive to each other and uses the results produced from the other in each recursive iteration. </p>
+
+
+<h3 id="cc">3.9. Company Control:</h3>
+<p>
+<pre><code class="language-sql">/*Base tables:*/ 
+shares(By: str, Of: str, Percent: int)
+
+WITH recursive cshares(ByCom, OfCom, sum() AS Tot) AS
+  (SELECT By, Of, Percent FROM cshares)
+   UNION
+  (SELECT control.Com1, cshares.OfCom, cshares.Tot
+   FROM control, cshares.ByCom
+   WHERE control.Com2 = cshares.ByCom),
+recursive control(Com1, Com2) AS
+  (SELECT ByCom, OfCom, Percent
+   FROM cshares
+   WHERE Percent > 50)
+SELECT ByCom, OfCom, Tot FROM cshares
+</code></pre>
+
+The <strong>Company Control</strong> query was proposed by Mumick, Pirahesh and Ramakrishnan to calculate the complex controlling relationships between companies.
+Companies can purchase shares of other companies. In addition to the shares that a company owns directly, a company A owns shares that are controlled by a company B when A has a majority (over 50% of the total number) of B's shares. A tuple <code class="highlighter-rouge">(A, B, 51)</code> in the base relation <code class="highlighter-rouge">shares</code> indicates company <code class="highlighter-rouge">A</code> directly owns 51% of the shares of company <code class="highlighter-rouge">B</code>.
+This query also uses the <strong>mutual recursion</strong>: the <code class="highlighter-rouge">cshares</code> view recursively computes the percentage of shares that one company owns of another company while the <code class="highlighter-rouge">control</code> view decides whether one company controls another company.</p>
+
+</div>
+    <!--div id="footer">
+      <div class="container">
+        <p class="text-muted credit">
+          RaSQL Project at the <a href="#"></a>, <abbr title="last build date October 25 2018">2018</abbr>
+          <a href="https://github.com/" class="pull-right">Edit this page</a>
+        </p>
+      </div>
+    </div>-->
+
+	<script src="prism.js"></script>
+    <script async="" src="//www.google-analytics.com/analytics.js"></script><script src="https://code.jquery.com/jquery-2.1.0.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-52534109-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+  
+
+</body></html>

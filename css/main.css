@@ -1,0 +1,95 @@
+.responsive {
+    max-width: 100%;
+    height: auto;
+}
+
+.bigger { font-size: 150%; }
+
+html {
+  position: relative;
+  min-height: 99%;
+}
+
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+
+/* Customize container */
+@media (min-width: 768px) {
+  .container {
+    max-width: 820px;
+  }
+}
+
+p {
+	line-height: 1.5em;
+}
+
+h1 {
+	margin-top: 30px;
+}
+
+h2 {
+	margin-top: 30px;
+}
+
+img.logo {
+	height: 32px;
+	margin-top: -6px;
+}
+
+.container .credit {
+    margin: 20px 0;
+}
+
+#footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  background-color: #f5f5f5;
+}
+
+.thumbnail.with-caption {
+  display: inline-block;
+  background: #f5f5f5;
+}
+
+.thumbnail.with-caption p {
+  margin: 0;
+  padding-top: 0.5em;
+}
+
+.nav ul.dropdown-menu li:not(.dropdown-header) {
+  margin-left: 1em;
+}
+
+.projectlist {
+  display:flex;
+  flex-flow: row wrap;
+} 
+
+.project {
+  width: 240px;
+  padding-bottom: 10px;
+  margin: 8px;
+  padding: 5px;
+}
+
+.project:hover {
+  background-color: #e7e7e7;
+}
+
+.project .post-title {
+  color: #428bca;
+}
+
+.project .post-excerpt {
+  color: #333;
+}
+
+.project a:hover {
+  text-decoration:none;
+}
