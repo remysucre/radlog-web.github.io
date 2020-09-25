@@ -44,7 +44,7 @@
         </li-->
 
         <li>
-          <a href="#" onclick="show('intro_body');">RaSQL</a>
+          <a href="#" onclick="show('intro_body');">RaDlog</a>
         </li>
 
         <li>
@@ -87,7 +87,7 @@
 </div>
 
 <div id="intro_body" class="container">
-  <h1>RaSQL (Recursive-aggregate-SQL)</h1>
+  <h1>RaDlog</h1>
 
   <!--h2>1. Introduction</h2-->
 
@@ -148,9 +148,10 @@ SELECT Part, Days FROM waitfor
 </div>
 
 <div id="lang_body" class="container">
-  <h1>RaSQL (Recursive-aggregate-SQL)</h1>
+  <!-- <h1>RaSQL (Recursive-aggregate-SQL)</h1> -->
+  <h2 class="cc">1. Datalog</h2>
 
-  <h2 class="cc">1. Semantics</h2>
+  <h2 class="cc">2. RaSQL</h2>
   The semantics for query <code class="highlighter-rouge">Q1</code> and <code class="highlighter-rouge">Q2</code> are defined by <i>naive fixpoint evaluation</i> shown in Algorithm 1 and 2,  where the following abbreviations are used: </p>
 
   <code class="highlighter-rouge">wf = waitfor</code><br/>
@@ -169,7 +170,7 @@ SELECT Part, Days FROM waitfor
   <p>This example illustrates that supporting aggregates in the <i>WITH recursive</i> clause requires only simple extensions at the syntax level, and techniques such as semi-naive fixpoint and magic sets also require simple extensions when aggregates are allowed in recursion. However aggregates in recursion raise major semantics issues caused by their non-monotonic nature.
     Fortunately the recent introduction of the PreM property has enabled much progress on this problem. In fact, the PreM holds for this example which indicates <code class="highlighter-rouge">Q1</code> and <code class="highlighter-rouge">Q2</code> will produce the same results (concrete semantics) and <code class="highlighter-rouge">Q2</code> has a minimal fixpoint semantics that is equivalent to the perfect model semantics of <code class="highlighter-rouge">Q1</code> (abstract semantics). </p>
 
-  <h2 class="cc">2. The PreM property</h2>
+  <h2 class="cc">3. The PreM property</h2>
   <p>If <code class="highlighter-rouge">T(R<sub>1</sub>, &hellip;, R<sub>k</sub>)</code> is a function defined by RA we say that a constraint <code class="highlighter-rouge">&gamma;</code>, is PreM to <code class="highlighter-rouge">T(R<sub>1</sub>, &hellip;, R<sub>k</sub>)</code> when the following property holds:
     <pre><code class="highlighter-rouge">&gamma;(T(R<sub>1</sub>, &hellip;, R<sub>k</sub>)) =  &gamma;(T(&gamma;(R<sub>1</sub>), &hellip;, &gamma;(R<sub>k</sub>)))</code></pre>
   </p>
@@ -212,8 +213,10 @@ SELECT Part, Days FROM waitfor
 </div>
 
 <div id="example_body" class="container">
-  <h1>RaSQL (Recursive-aggregate-SQL)</h1>
-  <h2 id="examples">Examples</h2>
+  <!-- <h1>RaSQL (Recursive-aggregate-SQL)</h1> -->
+  <h2 id="examples">KDDLog Examples</h2>
+  <p> put examples of KDD and ML here.
+  <h2 id="examples">RaSQL Examples</h2>
   <p>We provide a list of example queries expressible in RaSQL: Example 1-3 are classical graph queries; Example 4-8 demonstrate the power of aggregates in recursion to a broad range of application scenarios.</p>
 
   <h3 class="cc">1. Single-Source-Shortest-Path (SSSP):</h3>
@@ -395,7 +398,7 @@ SELECT ByCom, OfCom, Tot FROM cshares
 </div>
 
 <div id="pub_body" class="container">
-  <h1>RaSQL Publications</h1>
+  <!-- <h1>RaSQL Publications</h1> -->
   <br />
   <ul>
     <li>Jiaqi Gu, Yugo H. Watanabe, William A. Mazza, Alexander Shkapsky, Mohan Yang, Ling Ding, Carlo Zaniolo. <a href="http://yellowstone.cs.ucla.edu/papers/rasql.pdf" target="_blank">RaSQL: Greater Power and Performance for Big Data Analytics with Recursive-aggregate-SQL on Spark</a>, SIGMOD 19. <a href="https://dl.acm.org/citation.cfm?id=3299869.3324959" target="_blank"><span class="glyphicon glyphicon-file"></span>ACM DL</a></li>
