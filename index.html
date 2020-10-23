@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>RaDLog</title>
+  <title>RaDlog</title>
   <meta name="viewport" content="width=device-width">
 
   <!-- syntax highlighting CSS -->
@@ -87,12 +87,12 @@
 </div>
 
 <div id="intro_body" class="container">
-  <h1>RaDLog</h1>
-  <p> RaDLog is a powerful and scalable delcarative data analytics system, leveraging Datalog semantics to deliver an integrated system that covers a wide spectrum of applications, ranging from graph analysis, data mining to machine learning.
-  <h2 class="cc">1. KDDLog</h2>
-  <p> KDDLog is a scalable and declarative framework, to enable efficient knowledge discovery and data mining, and cover a broad range of applications. In KDDLog, KDD models are expressed by recursive queries with traditional aggregates, enriched with the new notion of chain aggregates. The efficient execution of these programs exploits the extended <strong>PreM</strong> property which enables a highly optimized fixpoint computation for aggregates. Thus, KDDLog’s main steps taken to realizes the various KDD models are as follows: 1) KDD models are first compiled into a Predicate Connection Graph (PCG) to identify the exit rules and recursive rules, then 2) PCG is mapped into a tree of relational and fixpoint operators, i.e. the corresponding logical plan, and finally 3) the logical plan is transformed into physical plan with corresponding physical operators and scheduled for execution according to the optimized semi-naive fixpoint semantics.<br />
+  <h1>RaDlog</h1>
+  <p> RaDlog is a powerful and scalable delcarative data analytics system, leveraging Datalog semantics to deliver an integrated system that covers a wide spectrum of applications, ranging from graph analysis, data mining to machine learning.
+  <h2 class="cc">1. Knowledge Discovery</h2>
+  <p> RaDlog is equipped with a scalable and declarative framework, to enable efficient knowledge discovery and data mining, and cover a broad range of applications. In RaDlog, KDD models are expressed by recursive queries with traditional aggregates, enriched with the new notion of chain aggregates. The efficient execution of these programs exploits the extended <strong>PreM</strong> property which enables a highly optimized fixpoint computation for aggregates. Thus, RaDlog’s main steps taken to realizes the various KDD models are as follows: 1) KDD models are first compiled into a Predicate Connection Graph (PCG) to identify the exit rules and recursive rules, then 2) PCG is mapped into a tree of relational and fixpoint operators, i.e. the corresponding logical plan, and finally 3) the logical plan is transformed into physical plan with corresponding physical operators and scheduled for execution according to the optimized semi-naive fixpoint semantics.<br />
 
-  <p> We implement this framework on top of Apache Spark, extending the Datalog engine provided by BigDatalog for query compilation and execution scheduling on Spark. The KDDLog system is fully integrated with the Apache Spark system via the extensible KDDLib library designed to assist everyday users to construct knowledge discovery tasks, along with a simple interface to add newly developed models to KDDLib. With KDDLib, the efforts required to introduce new models or extending existing ones can be significantly reduced by the use of recursive queries with aggregates.
+  <p> We implement this framework on top of Apache Spark, extending the Datalog engine provided by BigDatalog for query compilation and execution scheduling on Spark. The RaDlog system is fully integrated with the Apache Spark system via the extensible KDDLib library designed to assist everyday users to construct knowledge discovery tasks, along with a simple interface to add newly developed models to KDDLib. With KDDLib, the efforts required to introduce new models or extending existing ones can be significantly reduced by the use of recursive queries with aggregates.
   <br />
 
   <h2 class="cc">2. RaSQL</h2>
@@ -248,14 +248,14 @@ SELECT Part, Days FROM waitfor
   query ddays(Part, Days, Sub).</code>
 </pre>
 
-<p>As shown in Q4, chain aggregates must be utilized in conjunction with <code class="highlighter-rouge">max</code> or <code class="highlighter-rouge">min</code> and the KDDLog compiler checks that <code class="highlighter-rouge">cmax</code> is bundled with <code class="highlighter-rouge">max</code> and <code class="highlighter-rouge">cmin</code> is bundled with <code class="highlighter-rouge">min</code>. The syntax of the chain aggregate <code class="highlighter-rouge">cmax</code> is shown in Definition below, and a dual definition  holds for <code class="highlighter-rouge">cmin</code>.
+<p>As shown in Q4, chain aggregates must be utilized in conjunction with <code class="highlighter-rouge">max</code> or <code class="highlighter-rouge">min</code> and the RaDlog compiler checks that <code class="highlighter-rouge">cmax</code> is bundled with <code class="highlighter-rouge">max</code> and <code class="highlighter-rouge">cmin</code> is bundled with <code class="highlighter-rouge">min</code>. The syntax of the chain aggregate <code class="highlighter-rouge">cmax</code> is shown in Definition below, and a dual definition  holds for <code class="highlighter-rouge">cmin</code>.
 <pre>
   [Definition: Chain Max]<code class="highlighter-rouge"> In the head of a Datalog rule, the notation p(t<sub>1</sub>, &hellip; , t<sub>m-1</sub>, max< t<sub>m</sub> >, cmax< t<sub>m+1</sub>, &hellip; , t<sub>n</sub> >) 
   defines the n-argument predicate derived by computing max< t<sub>m</sub> > on the group-by attributes, t<sub>1</sub>, &hellip; , t<sub>m-1</sub>, 
   and applying cmax upon the arguments t<sub>m+1</sub>, &hellip; , t<sub>n</sub> correlated to max< t<sub>m</sub> >.
 </code>
 </pre>
-<p> In above definition, <code class="highlighter-rouge">t<sub>m</sub></code> is called aggregate attribute and <code class="highlighter-rouge">t<sub>m+1</sub>, &hellip; , t<sub>n</sub></code> is regarded as chain attributes. Both chain and aggregate attributes are variables, and the <code class="highlighter-rouge">cmax</code> may take one or more variables (i.e., <code class="highlighter-rouge">m+1 < n</code>) as input, and generating <code class="highlighter-rouge">n</code> outputs. When multiple <code class="highlighter-rouge">(t<sub>m+1</sub>, &hellip; , t<sub>n</sub>)</code> instances share the same <code class="highlighter-rouge">max< t<sub>m</sub> ></code>, KDDLog supports two options: i) <code class="highlighter-rouge">cmax</code>, which returns all the instances of <code class="highlighter-rouge">(t<sub>m+1</sub>, &hellip; , t<sub>n</sub>)</code> , and ii) <code class="highlighter-rouge">scmax</code>, only single instance of <code class="highlighter-rouge">(t<sub>m+1</sub>, &hellip; , t<sub>n</sub>)</code> produced by the
+<p> In above definition, <code class="highlighter-rouge">t<sub>m</sub></code> is called aggregate attribute and <code class="highlighter-rouge">t<sub>m+1</sub>, &hellip; , t<sub>n</sub></code> is regarded as chain attributes. Both chain and aggregate attributes are variables, and the <code class="highlighter-rouge">cmax</code> may take one or more variables (i.e., <code class="highlighter-rouge">m+1 < n</code>) as input, and generating <code class="highlighter-rouge">n</code> outputs. When multiple <code class="highlighter-rouge">(t<sub>m+1</sub>, &hellip; , t<sub>n</sub>)</code> instances share the same <code class="highlighter-rouge">max< t<sub>m</sub> ></code>, RaDlog supports two options: i) <code class="highlighter-rouge">cmax</code>, which returns all the instances of <code class="highlighter-rouge">(t<sub>m+1</sub>, &hellip; , t<sub>n</sub>)</code> , and ii) <code class="highlighter-rouge">scmax</code>, only single instance of <code class="highlighter-rouge">(t<sub>m+1</sub>, &hellip; , t<sub>n</sub>)</code> produced by the
 max values will be returned. Dual properties hold for <code class="highlighter-rouge">cmin</code> and <code class="highlighter-rouge">scmin</code>.
   
 
@@ -263,10 +263,20 @@ max values will be returned. Dual properties hold for <code class="highlighter-r
 
 <div id="example_body" class="container">
   <!-- <h1>RaSQL (Recursive-aggregate-SQL)</h1> -->
-  <h2 id="examples">KDDLog Examples</h2>
-  <p> put examples of KDD and ML here.
+  <h2 id="examples">Knowledge Discovery Examples</h2>
+  <p> We provide a list of data mining and machine learning example queries expressible in RaDlog:
+
+<h3 class="cc">1. Frequent Itemset</h3>
+
+<h3 class="cc">2. Lloyd Clustering</h3>
+
+<h3 class="cc">3. Decision Tree</h3>
+
+<h3 class="cc">4. Linear Regression</h3>
+
+
   <h2 id="examples">RaSQL Examples</h2>
-  <p>We provide a list of example queries expressible in RaSQL: Example 1-3 are classical graph queries; Example 4-8 demonstrate the power of aggregates in recursion to a broad range of application scenarios.</p>
+  <p>We provide a list of example queries expressible with RaSQL: Example 1-3 are classical graph queries; Example 4-8 demonstrate the power of aggregates in recursion to a broad range of application scenarios.</p>
 
   <h3 class="cc">1. Single-Source-Shortest-Path (SSSP):</h3>
   <p>
