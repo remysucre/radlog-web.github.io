@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>RaSQL (Recursive-aggregate-SQL)</title>
+  <title>RaDLog</title>
   <meta name="viewport" content="width=device-width">
 
   <!-- syntax highlighting CSS -->
@@ -87,12 +87,15 @@
 </div>
 
 <div id="intro_body" class="container">
-  <h1>RaDlog</h1>
+  <h1>RaDLog</h1>
+  <p> RaDLog is a powerful and scalable delcarative data analytics system, leveraging Datalog semantics to deliver an integrated system that covers a wide spectrum of applications, ranging from graph analysis, data mining to machine learning.
+  <h2 class="cc">1. KDDLog</h2>
+  <p> KDDLog is a scalable and declarative framework, to enable efficient knowledge discovery and data mining, and cover a broad range of applications. In KDDLog, KDD models are expressed by recursive queries with traditional aggregates, enriched with the new notion of chain aggregates. The efficient execution of these programs exploits the extended <strong>PreM</strong> property which enables a highly optimized fixpoint computation for aggregates. Thus, KDDLog’s main steps taken to realizes the various KDD models are as follows: 1) KDD models are first compiled into a Predicate Connection Graph (PCG) to identify the exit rules and recursive rules, then 2) PCG is mapped into a tree of relational and fixpoint operators, i.e. the corresponding logical plan, and finally 3) the logical plan is transformed into physical plan with corresponding physical operators and scheduled for execution according to the optimized semi-naive fixpoint semantics.<br />
 
-  <!--h2>1. Introduction</h2-->
-
+  <p> We implement this framework on top of Apache Spark, extending the Datalog engine provided by BigDatalog for query compilation and execution scheduling on Spark. The KDDLog system is fully integrated with the Apache Spark system via the extensible KDDLib library designed to assist everyday users to construct knowledge discovery tasks, along with a simple interface to add newly developed models to KDDLib. With KDDLib, the efforts required to introduce new models or extending existing ones can be significantly reduced by the use of recursive queries with aggregates.
   <br />
 
+  <h2 class="cc">2. RaSQL</h2>
   <p>RaSQL language is an extension of the current SQL standard by allowing the use of the
     aggregates such as <code class="highlighter-rouge">min</code>, <code class="highlighter-rouge">max</code>, <code class="highlighter-rouge">count</code> and <code class="highlighter-rouge">sum</code> in the <i>Common Table Expression</i> (<strong>CTE</strong>) by which recursive queries can be expressed in the current standard.
     The exclusion of aggregates from the Recursive CTE of current standards was largely due to concerns about semantics and implementation caused by the non-monotonic nature of aggregates, since this can compromise the least-fixpoint semantics of these queries.
@@ -104,26 +107,46 @@
 
   <!--h2 id="syntax-and-semantics">2. Language Syntax and Semantics</h2-->
 
-  <p>We use the classical <i>Bill of Materials</i> (<strong>BOM</strong>) example, an important recursive query application in <strong>SQL:99</strong>, to illustrate the syntax and semantics of RaSQL and the PreM property.
-    In our simple version of BOM, we have the following two base relations:
+<h2 class="cc">3. BigDatalog</h2>
+  <p> BigDatalog is a full Datalog language implementation on Apache Spark developed under the Deductive Application Language System (<strong>DeALS</strong>) project at UCLA. The DeALS project seeks to (1) design a unified logical language that enables the concise and declarative expression of analytics, and (2) provide a system that optimizes execution over diverse platforms including sequential implementations, multi-core machines, and clusters (with BigDatalog).<br />
 
-  <pre><code class="language-sql">assbl(Part, Spart)
-basic(Part, Days)</code></pre></p>
+  <p>BigDatalog supports relational algebra, aggregation, and recursion, as well as a host of declarative optimizations. It also exploits semantic exten- sions for programs with aggregation in recursion. As a result, the Spark programmer can now implement complex analytics pipelines of relational, graph and machine learning tasks in a single language, instead of stitching together programs written in different APIs, i.e., Spark SQL, GraphX and MLlib.
+  <br />
+</div>
 
-  <p>For each item, the <code class="highlighter-rouge">assbl</code> relation describes its immediate subparts. Not all items are assembled: basic parts are purchased directly from external suppliers and will be delivered in a certain number of days, which is described in the <code class="highlighter-rouge">basic</code> table.
-    Without loss of generality, we assume a part will be ready the very same day when its last subpart arrives. Thus, the number of days required for
-    the an item to be ready is the <strong>maximum</strong> day when each of its subparts is delivered. </p>
+<div id="lang_body" class="container">
+  <!-- <h1>RaSQL (Recursive-aggregate-SQL)</h1> -->
+  <h2 class="cc">1. Datalog</h2>
+
+  <p> A Datalog program is defined by a set rules with the form: <code class="highlighter-rouge">h &#8592; b<sub>1</sub>, &hellip; ,b<sub>n</sub></code>, where <code class="highlighter-rouge">h</code> and <code class="highlighter-rouge">b<sub>1</sub>, &hellip; ,b<sub>n</sub></code> are respectively called the head and body of this rule, and each <code class="highlighter-rouge">b<sub>i</sub></code> are its atoms. The rule head <code class="highlighter-rouge">h</code> and each <code class="highlighter-rouge">b<sub>i</sub></code> are atoms, with the form <code class="highlighter-rouge">p<sub>i</sub>(t<sub>1</sub>, &hellip; , t<sub>j</sub>)</code> where <code class="highlighter-rouge">p<sub>i</sub></code> is a predicate and <code class="highlighter-rouge">t<sub>1</sub>, &hellip; , t<sub>j</sub></code> are terms which can be constants or variables. The comma separating each <code class="highlighter-rouge">b<sub>i</sub></code> in the body denotes the logical conjunction (AND). On occasions, we use the terms predicate, table and relation interchangeably. In a Datalog program, predicates can be either the base relations stored in extensional database (EDB), or the derived relations defined by rules heads of the rules, forming the intensional database (IDB). As a convention, predicate names and constant begin with lower case letters, and variable names begin with upper case letters.
+
+
+<p> To illustrate the syntax and semantics of Datalog with aggregates, consider a simplified Bill of Materials(<strong>BOM</strong>) example where we have two EDB relations: <code class="highlighter-rouge">assbl</code> and <code class="highlighter-rouge">basic</code>. The <code class="highlighter-rouge">assbl</code> table describes the assembling relationships between a <code class="highlighter-rouge">Part</code> and associated sub-parts. Not all items are assembled: basic parts are purchased directly from external suppliers and will be delivered in a certain number of days, which is described in the <code class="highlighter-rouge">basic</code> table. <code class="highlighter-rouge">ddays</code> is an derived relation, indicating the number of days required for the item to be ready. We have simple assemblies, such as bikes, where a bike and its sub-parts are assembled as soon as all its basic sub-parts arrive. Thus, the number of required days is the maximum day when all sub-parts are delivered, as illustrated
+by following query. This query recursively produces pairs of <code class="highlighter-rouge">Part</code>and the maximum number of <code class="highlighter-rouge">Days</code> required for assembly.
+
+<pre>
+  <code class="language-sql">Relations: assbl(Part, Sub), basic(Part, Days).
+  r<sub>1</sub>:ddays(Part, Days) &#8592; basic(Part, Days).
+  r<sub>2</sub>:ddays(Part, Days) &#8592; assbl(Part, Sub), ddays(Sub, Days).
+  r<sub>3</sub>: mxdays(Part, max<Days>) &#8592; ddays(Part, Days).
+  query  mxdays(Part, MxDays).</code>
+</pre>
+<br/>
+<p> Rule <code class="highlighter-rouge">r<sub>2</sub></code> is recognized as recursive since the predicate <code class="highlighter-rouge">ddays</code> appears in both the head and body. The recursive IDB relation <code class="highlighter-rouge">ddays</code> is also the head for non-recursive rule <code class="highlighter-rouge">r<sub>1</sub></code>, which is a <code class="highlighter-rouge">base rule</code> because it serves as a base case of the recursion. Since at most one recursive goal is included in the body of any rule, this query represents a case of <code class="highlighter-rouge">linear recursion</code>; the term <code class="highlighter-rouge">linear recursion</code> denotes instead the case where some rules contain multiple recursive goals. In rule <code class="highlighter-rouge">r<sub>3</sub></code>, <code class="highlighter-rouge">max<Days></code> specifies the application of the <code class="highlighter-rouge">max</code> aggregate upon <code class="highlighter-rouge">Days</code>, with the remaining head attributes, i.e., <code class="highlighter-rouge">Part</code> in our example,  implicitly defined as the group-by attributes.
+
+<h2 class="cc">2. RaSQL</h2>
+  <p>We use the classical <strong>BOM</strong> example, an important recursive query application in <strong>SQL:99</strong>, to illustrate the syntax and semantics of RaSQL and the PreM property.
 
   <p>In SQL:99, the BOM query can be expressed as follows:
 
 
   <pre><code class="language-sql">/*Q1: Days Till Delivery by a Stratified Program*/
-WITH recursive waitfor(Part, Days) AS    	
-	(SELECT Part, Days FROM basic)
-		UNION 
-	(SELECT assbl.Part, waitfor.Days
-	FROM assbl, waitfor
-	WHERE assbl.Spart = waitfor.Part)
+WITH recursive waitfor(Part, Days) AS     
+  (SELECT Part, Days FROM basic)
+    UNION 
+  (SELECT assbl.Part, waitfor.Days
+  FROM assbl, waitfor
+  WHERE assbl.Spart = waitfor.Part)
 SELECT Part, max(Days) FROM waitfor GROUP BY Part
 </code></pre></p>
 
@@ -145,13 +168,6 @@ SELECT Part, Days FROM waitfor
   <p>Note that from a syntax point of view, RaSQL query only makes a small change to replace the <strong>stratified max</strong> (stratified aggregate means it can only be applied to the result of recursive evaluation, not within the recursive evaluation process) used in <code class="highlighter-rouge">Q1</code> by the <code class="highlighter-rouge">max</code> aggregate in the recursive CTE head of <code class="highlighter-rouge">Q2</code>.
     However, it is non-trivial to show that <code class="highlighter-rouge">Q1</code> and <code class="highlighter-rouge">Q2</code> are equivalent semantically and evaluate to the same result, which is discussed below. </p>
 
-</div>
-
-<div id="lang_body" class="container">
-  <!-- <h1>RaSQL (Recursive-aggregate-SQL)</h1> -->
-  <h2 class="cc">1. Datalog</h2>
-
-  <h2 class="cc">2. RaSQL</h2>
   The semantics for query <code class="highlighter-rouge">Q1</code> and <code class="highlighter-rouge">Q2</code> are defined by <i>naive fixpoint evaluation</i> shown in Algorithm 1 and 2,  where the following abbreviations are used: </p>
 
   <code class="highlighter-rouge">wf = waitfor</code><br/>
@@ -170,7 +186,7 @@ SELECT Part, Days FROM waitfor
   <p>This example illustrates that supporting aggregates in the <i>WITH recursive</i> clause requires only simple extensions at the syntax level, and techniques such as semi-naive fixpoint and magic sets also require simple extensions when aggregates are allowed in recursion. However aggregates in recursion raise major semantics issues caused by their non-monotonic nature.
     Fortunately the recent introduction of the PreM property has enabled much progress on this problem. In fact, the PreM holds for this example which indicates <code class="highlighter-rouge">Q1</code> and <code class="highlighter-rouge">Q2</code> will produce the same results (concrete semantics) and <code class="highlighter-rouge">Q2</code> has a minimal fixpoint semantics that is equivalent to the perfect model semantics of <code class="highlighter-rouge">Q1</code> (abstract semantics). </p>
 
-  <h2 class="cc">3. The PreM property</h2>
+<h2 class="cc">3. The PreM property</h2>
   <p>If <code class="highlighter-rouge">T(R<sub>1</sub>, &hellip;, R<sub>k</sub>)</code> is a function defined by RA we say that a constraint <code class="highlighter-rouge">&gamma;</code>, is PreM to <code class="highlighter-rouge">T(R<sub>1</sub>, &hellip;, R<sub>k</sub>)</code> when the following property holds:
     <pre><code class="highlighter-rouge">&gamma;(T(R<sub>1</sub>, &hellip;, R<sub>k</sub>)) =  &gamma;(T(&gamma;(R<sub>1</sub>), &hellip;, &gamma;(R<sub>k</sub>)))</code></pre>
   </p>
@@ -207,8 +223,41 @@ SELECT Part, Days FROM waitfor
   <p>Symmetrically, if we start from Algorithm 2, we  see that <code class="highlighter-rouge">max(wf(Part,Days))</code>, i,e., the max applied to the previous step in the iteration, can be removed without changing the result.  Therefore, starting at line 2, and repeating this reasoning  for each successive step, we can remove each max from Algorithm 2 - except the one at the last step, that  will actually be applied at line 7. In  other words, we find that PreM allows us to transform Algorithm 1 into Algorithm 2 and vice-versa, thus providing a robust proof of the equivalence of  the operational semantics of Q1 and Q2.
   We also have that at the pure declarative level, the abstract semantics of Q1 and Q2 coincide, since the minimal fixpoint semantics for Q2 coincides with the perfect model of Q1.</p>
 
-  <p>In addition to  min and max, the PreM condition entails the use of count and sum in recursion.
+  <p>In addition to min and max, the PreM condition entails the use of count and sum in recursion.
   This is because, the count can be modeled as the max applied on the continuous monotonic count which can be freely used in recursion, and similar property hold for the sum of positive numbers. Thus for our BOM example, we can use a query similar to Q2 to efficiently compute the count of items used in an assembly, or to sum their costs. </p>
+
+<p>Along with the improved aggregates in recursion semantics, we have an upgraded formal semantics since stable model semantics holds for transformed program in Q3.
+<pre>
+  <code class="language-sql">/*Q3: The PreM-optimized stable model of BOM query*/
+  Relations: assbl(Part, Sub), basic(Part, Days).
+  r<sub>1</sub>:ddays(Part, max<Days>) &#8592; basic(Part, Days).
+  r<sub>2</sub>:ddays(Part, max<Days>) &#8592; assbl(Part, Sub), ddays(Sub, Days).
+  query ddays(Part, MxDays).</code>
+</pre>
+
+<h2 class="cc">4. The Chain Aggregates</h2>
+  <p> Along with the need for basic SQL aggregates in recursion, we identified the need for supporting chains of such aggregates which enable more compact and efficient expressions for various knowledge discovery algorithms. In chain aggregates, an invisible chain is introduced to chain upstream records with downstream ones according to specified constraints. In predictive analysis  this provides a general and  low-overhead way  to connect iterative tasks without compromising the original semantics of the queries.<br />
+
+  <p> Let us now extend Q3 and assume that, along with the maximum time needed to obtain all the basic parts in an assembly, we want to discover which sub-part in each assembly is responsible for the longest waiting. By leveraging chain aggregates, the query can be modified into Q4, below, for such pursuit. <code class="highlighter-rouge">cmax</code> is leveraged in both <code class="highlighter-rouge">r<sub>1</sub></code> and <code class="highlighter-rouge">r<sub>2</sub></code> to find the maximum days at initial step, then recursively trace those sub-parts which lead to "maximum days" during the assembly procedure. In both rules, the attribute <code class="highlighter-rouge">Part</code> is implicitly defined as the group-by attribute for both <code class="highlighter-rouge">cmax</code> and <code class="highlighter-rouge">max</code>. Therefore, by executing this query, along with the maximum number of days required by the sub-parts of given a part to be delivered, the sub-part(s) causing this maximum  will also be returned.
+
+<pre>
+  <code class="language-sql">/*Q4: BOM query with Chain Aggregate: cmax*/
+  Relations: assbl(Part, Sub), basic(Part, Days).
+  r<sub>1</sub>:ddays(Part, max<Days>, cmax<Part>) &#8592; basic(Part, Days).
+  r<sub>2</sub>:ddays(Part, max<Days>, cmax<Sub>) &#8592; assbl(Part, Sub), ddays(Sub, Days, _).
+  query ddays(Part, Days, Sub).</code>
+</pre>
+
+<p>As shown in Q4, chain aggregates must be utilized in conjunction with <code class="highlighter-rouge">max</code> or <code class="highlighter-rouge">min</code> and the KDDLog compiler checks that <code class="highlighter-rouge">cmax</code> is bundled with <code class="highlighter-rouge">max</code> and <code class="highlighter-rouge">cmin</code> is bundled with <code class="highlighter-rouge">min</code>. The syntax of the chain aggregate <code class="highlighter-rouge">cmax</code> is shown in Definition below, and a dual definition  holds for <code class="highlighter-rouge">cmin</code>.
+<pre>
+  [Definition: Chain Max]<code class="highlighter-rouge"> In the head of a Datalog rule, the notation p(t<sub>1</sub>, &hellip; , t<sub>m-1</sub>, max< t<sub>m</sub> >, cmax< t<sub>m+1</sub>, &hellip; , t<sub>n</sub> >) 
+  defines the n-argument predicate derived by computing max< t<sub>m</sub> > on the group-by attributes, t<sub>1</sub>, &hellip; , t<sub>m-1</sub>, 
+  and applying cmax upon the arguments t<sub>m+1</sub>, &hellip; , t<sub>n</sub> correlated to max< t<sub>m</sub> >.
+</code>
+</pre>
+<p> In above definition, <code class="highlighter-rouge">t<sub>m</sub></code> is called aggregate attribute and <code class="highlighter-rouge">t<sub>m+1</sub>, &hellip; , t<sub>n</sub></code> is regarded as chain attributes. Both chain and aggregate attributes are variables, and the <code class="highlighter-rouge">cmax</code> may take one or more variables (i.e., <code class="highlighter-rouge">m+1 < n</code>) as input, and generating <code class="highlighter-rouge">n</code> outputs. When multiple <code class="highlighter-rouge">(t<sub>m+1</sub>, &hellip; , t<sub>n</sub>)</code> instances share the same <code class="highlighter-rouge">max< t<sub>m</sub> ></code>, KDDLog supports two options: i) <code class="highlighter-rouge">cmax</code>, which returns all the instances of <code class="highlighter-rouge">(t<sub>m+1</sub>, &hellip; , t<sub>n</sub>)</code> , and ii) <code class="highlighter-rouge">scmax</code>, only single instance of <code class="highlighter-rouge">(t<sub>m+1</sub>, &hellip; , t<sub>n</sub>)</code> produced by the
+max values will be returned. Dual properties hold for <code class="highlighter-rouge">cmin</code> and <code class="highlighter-rouge">scmin</code>.
+  
 
 </div>
 
@@ -401,6 +450,18 @@ SELECT ByCom, OfCom, Tot FROM cshares
   <!-- <h1>RaSQL Publications</h1> -->
   <br />
   <ul>
+    <li>Youfu Li, Jin Wang, Mingda Li, Ariyam Das, Jiaqi Gu, Carlo Zaniolo. <a href="" target="_blank">KDDLog: Performance and Scalability in Knowledge Discovery by Declarative Queries with Aggregates</a>, conference.</li>
+  </ul>
+  <ul>
+    <li>Jin Wang, Jiacheng Wu, Mingda Li, Jiaqi Gu, Ariyam Das, Carlo Zaniolo. <a href="" target="_blank">Formal Semantics and High Performance in Declarative Machine Learning using Datalog</a>, conference.</li>
+  </ul>
+  <ul>
+    <li>Zaniolo, Carlo, Ariyam Das, Youfu Li, Mingda Li, and Jin Wang. <a href="" target="_blank">Formal semantics and scalability for datalog with aggregates: a cardinality-based solution</a>, ICLP, 2020</li>
+  </ul>
+  <ul>
+    <li>Zaniolo, Carlo, Ariyam Das, Jiaqi Gu, Youfu Li, Mingda Li and Jin Wang. <a href="https://arxiv.org/pdf/1910.08888" target="_blank"> Monotonic properties of completed aggregates in recursive queries</a>, arXiv, 2019</li>
+  </ul>
+  <ul>
     <li>Jiaqi Gu, Yugo H. Watanabe, William A. Mazza, Alexander Shkapsky, Mohan Yang, Ling Ding, Carlo Zaniolo. <a href="http://yellowstone.cs.ucla.edu/papers/rasql.pdf" target="_blank">RaSQL: Greater Power and Performance for Big Data Analytics with Recursive-aggregate-SQL on Spark</a>, SIGMOD 19. <a href="https://dl.acm.org/citation.cfm?id=3299869.3324959" target="_blank"><span class="glyphicon glyphicon-file"></span>ACM DL</a></li>
   </ul>
   <ul>
@@ -409,12 +470,15 @@ SELECT ByCom, OfCom, Tot FROM cshares
   <ul>
     <li>Carlo Zaniolo, Mohan Yang, Ariyam Das, Alexander Shkapsky, Tyson Condie, Matteo Interlandi. <a href="https://www.cambridge.org/core/journals/theory-and-practice-of-logic-programming/article/fixpoint-semantics-and-optimization-of-recursive-datalog-programs-with-aggregates/605FE14CADEA2567C9EDBB78BBD1E0A2" target="_blank">Fixpoint semantics and optimization of recursive Datalog programs with aggregates</a>, TPLP 17. <a href="https://arxiv.org/abs/1707.05681" target="_blank"><span class="glyphicon glyphicon-file"></span>arXiv</a></li>
   </ul>
+  <ul>
+    <li>Shkapsky, Alexander and Yang, Mohan and Interlandi, Matteo and Chiu, Hsuan and Condie, Tyson and Zaniolo, Carlo. <a href="https://dl.acm.org/doi/pdf/10.1145/2882903.2915229?casa_token=iOYDWGB7pNEAAAAA:qeoD00d-prcKPsMW13Y8K2ZKKSfpVxIvHSwiTYYJGmfHZUgVNtgV5ufnOpmB48GdlYhvlPWXWcYgyw" target="_blank">Big data analytics with datalog queries on spark</a>, SIGMOD, 2016.</li>
+  </ul>
 </div>
 
 <div id="footer">
   <div class="container">
     <p class="text-muted credit">
-      RaSQL Team at <a href="http://wis.cs.ucla.edu/wis/">University of California, Los Angeles</a>, <abbr title="last build date April 22 2019">2019</abbr>
+      RaDLog Team at <a href="http://wis.cs.ucla.edu/wis/">University of California, Los Angeles</a>, <abbr title="last build date April 22 2019">2020</abbr>
       <!--a href="https://github.com/rasql-web" class="pull-right">Edit this page</a-->
     </p>
   </div>
