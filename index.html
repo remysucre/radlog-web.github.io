@@ -268,12 +268,58 @@ max values will be returned. Dual properties hold for <code class="highlighter-r
 
 <h3 class="cc">1. Frequent Itemset</h3>
 
+<pre><code class="language-sql">
+  /*Base table:*/
+  trans(Tid: integer, Item: integer)
+  /*Leverage FrequentItemset() in the library*/
+  val fis = new FrequentItemset()
+  fis.initlizeConfig()
+  fis.setMinSupport(10)
+  val trans = "testdata/fi/trans.csv"
+  val freqItemset = fis.run(trans)
+  ...
+</code></pre>
+
+<p> The original algorithm exploits the Apriori property that all nonempty subsets of a frequent itemset must also be frequent. To leverage our proposed KDDLib for frequent pattern mining, users can first use <i>initialzeConfig()</i> to set default configurations, or utilize given functions to modify the configurations. With provided path of training data, the computation of frequent itemset is wrapped into <i>run()</i> function.
+
 <h3 class="cc">2. Lloyd Clustering</h3>
+
+<pre><code class="language-sql">
+  /*Base tables:*/
+  init(Cno: integer, Dim: integer, Val: double), point(Pno: integer, Dim: integer, Val: double)
+  /*Leverage LloydClustering() in the library*/
+  val lc = new LloydClustering()
+  lc.initlizeConfig()
+  ls.setNumClusters(4)
+  val initPath = "testdata/cluster/init.csv"
+  val pointPath = "testdata/cluster/point.csv"
+  val model = lc.train(initPath, pointPath)
+  ...
+</code></pre>
+<p> Among the many methods proposed, <i>K-means</i> (a.k.a. Lloyd clustering), still represents one
+of the best known and widely used algorithm, and thus provides a natural candidate for a Datalog implementation.
+In <i>K-means</i>, the default measure of closeness/similarity is the Euclidean distance. In particular, the <i>K-means</i> algorithm in data mining starts with a first group of randomly selected centroids, which are used as the beginning points for every cluster, and then performs iterative (repetitive) calculations to optimize the positions of the centroids. A centroid is the imaginary or real location representing the center of the cluster. The above example takes default configuration and generate trained clustering model as results.
 
 <h3 class="cc">3. Decision Tree</h3>
 
-<h3 class="cc">4. Linear Regression</h3>
-
+<pre><code class="language-sql">
+  /*Base tables:*/
+  init(ID: integer, Sz: integer, Col: integer, Val: integer, Sid: integer), iset(Sid: integer, Ncol: integer, Nval: integer), expand(Sid: integer, Ncol: integer), train(Tid: integer, Col: integer, Val: integer), dec(Tid: integer, Dec: integer)
+  /*Leverage DecisionTree() in the library*/
+  val dtree = new DecisionTree()
+  dtree.initlizeConfig()
+  dtree.setImpurity("Gini")
+  val initPath = "testdata/dt/pattern.csv"
+  val isetPath = "testdata/dt/iset.csv"
+  val trainPath = "testdata/dt/train.csv"
+  val decPath = "testdata/dt/dec.csv"
+  val expandPath = "testdata/dt/expand.csv"
+  val model = dtree.trainClassifier(initPath, isetPath, trainPath, decPath, expandPath)
+  ...
+</code></pre>
+<p> Classification is a form of supervised learning on how to best
+categorize data into classes and concepts. Among the many classification techniques available, decision trees 
+represent the most significant and popular method. Our proposed algorithm adopts a greedy (i.e., non-backtracking) approach in which decision trees are built in a top-down recursive divide-and-conquer manner. Thus, the training set is recursively partitioned into smaller subsets based on attribute selection measures (e.g. Gini Index). In above example, we utilize default configuration to construct a decision tree with given training datasets.
 
   <h2 id="examples">RaSQL Examples</h2>
   <p>We provide a list of example queries expressible with RaSQL: Example 1-3 are classical graph queries; Example 4-8 demonstrate the power of aggregates in recursion to a broad range of application scenarios.</p>
@@ -460,10 +506,10 @@ SELECT ByCom, OfCom, Tot FROM cshares
   <!-- <h1>RaSQL Publications</h1> -->
   <br />
   <ul>
-    <li>Youfu Li, Jin Wang, Mingda Li, Ariyam Das, Jiaqi Gu, Carlo Zaniolo. <a href="" target="_blank">KDDLog: Performance and Scalability in Knowledge Discovery by Declarative Queries with Aggregates</a>, conference.</li>
+    <li>Youfu Li, Jin Wang, Mingda Li, Ariyam Das, Jiaqi Gu, Carlo Zaniolo. <a href="" target="_blank">KDDLog: Performance and Scalability in Knowledge Discovery by Declarative Queries with Aggregates</a>, in submission for publication.</li>
   </ul>
   <ul>
-    <li>Jin Wang, Jiacheng Wu, Mingda Li, Jiaqi Gu, Ariyam Das, Carlo Zaniolo. <a href="" target="_blank">Formal Semantics and High Performance in Declarative Machine Learning using Datalog</a>, conference.</li>
+    <li>Jin Wang, Jiacheng Wu, Mingda Li, Jiaqi Gu, Ariyam Das, Carlo Zaniolo. <a href="" target="_blank">Formal Semantics and High Performance in Declarative Machine Learning using Datalog</a>, in submission for publication.</li>
   </ul>
   <ul>
     <li>Zaniolo, Carlo, Ariyam Das, Youfu Li, Mingda Li, and Jin Wang. <a href="" target="_blank">Formal semantics and scalability for datalog with aggregates: a cardinality-based solution</a>, ICLP, 2020</li>
