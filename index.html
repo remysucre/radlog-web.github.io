@@ -128,7 +128,7 @@ by following query. This query recursively produces pairs of <code class="highli
   <code class="language-sql">Relations: assbl(Part, Sub), basic(Part, Days).
   r<sub>1</sub>:ddays(Part, Days) &#8592; basic(Part, Days).
   r<sub>2</sub>:ddays(Part, Days) &#8592; assbl(Part, Sub), ddays(Sub, Days).
-  r<sub>3</sub>: mxdays(Part, max<Days>) &#8592; ddays(Part, Days).
+  r<sub>3</sub>: mxdays(Part, max&lt;Days&gt;) &#8592; ddays(Part, Days).
   query  mxdays(Part, MxDays).</code>
 </pre>
 <br/>
@@ -230,8 +230,8 @@ SELECT Part, Days FROM waitfor
 <pre>
   <code class="language-sql">/*Q3: The PreM-optimized stable model of BOM query*/
   Relations: assbl(Part, Sub), basic(Part, Days).
-  r<sub>1</sub>:ddays(Part, max<Days>) &#8592; basic(Part, Days).
-  r<sub>2</sub>:ddays(Part, max<Days>) &#8592; assbl(Part, Sub), ddays(Sub, Days).
+  r<sub>1</sub>:ddays(Part, max&lt;Days&gt;) &#8592; basic(Part, Days).
+  r<sub>2</sub>:ddays(Part, max&lt;Days&gt;) &#8592; assbl(Part, Sub), ddays(Sub, Days).
   query ddays(Part, MxDays).</code>
 </pre>
 
@@ -243,8 +243,8 @@ SELECT Part, Days FROM waitfor
 <pre>
   <code class="language-sql">/*Q4: BOM query with Chain Aggregate: cmax*/
   Relations: assbl(Part, Sub), basic(Part, Days).
-  r<sub>1</sub>:ddays(Part, max<Days>, cmax<Part>) &#8592; basic(Part, Days).
-  r<sub>2</sub>:ddays(Part, max<Days>, cmax<Sub>) &#8592; assbl(Part, Sub), ddays(Sub, Days, _).
+  r<sub>1</sub>:ddays(Part, max&lt;Days&gt;, cmax&lt;Part&gt;) &#8592; basic(Part, Days).
+  r<sub>2</sub>:ddays(Part, max&lt;Days&gt;, cmax&lt;Sub&gt;) &#8592; assbl(Part, Sub), ddays(Sub, Days, _).
   query ddays(Part, Days, Sub).</code>
 </pre>
 
