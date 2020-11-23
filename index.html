@@ -60,8 +60,12 @@
         </li>
 
         <li>
-          <a href="#">GitHub</a>
+          <a href="#" onclick="show('tutorial_body');">Tutorial</a>
         </li>
+
+        <!--li>
+          <a href="#">GitHub</a>
+        </li-->
 
         <!--li class="active dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Documentation <span class="caret"></span></a>
@@ -531,10 +535,116 @@ SELECT ByCom, OfCom, Tot FROM cshares
   </ul>
 </div>
 
+<div id="tutorial_body" class="container">
+RaDlog is a system supporting the execution of recursive query. It is built on top of Spark (branch 2.0) that includes the compiler and the distributed execution engine for the RaSQL (Recursive-aggregate-SQL) language and the traditional Datalog. It supersedes the BigDatalog system that previously developed at UCLA.
+
+Users who are interested in RaDlog can follow this tutorial to intall RaDlog and configure the environment in your machine.
+<h3 class="cc">1. Build RaDlog</h3>
+Download the source code from Github.
+<pre>
+  <code class="language-sql">$ git clone https://github.com/radlog-web/radlog.git</code>
+</pre>
+<br/>
+RaDlog is built on Apache Spark using <a href="http://maven.apache.org/">Apache Maven</a>. To build RaDlog and its example programs, run:
+<pre>
+  <code class="language-sql">$ cd /PATH-TO-RADLOG/radlog
+  $ build/mvn -DskipTests clean package
+  </code>
+</pre>
+<br/>
+(You do not need to do this if you downloaded a pre-built package.)
+<br/>
+Similar to Spark, RaDlog can also be built using SBT, run:
+<pre>
+  <code class="language-sql">$ build/sbt compile</code>
+</pre>
+SBT is typically faster than Maven in development build. To build packaged jars, run:
+<pre>
+  <code class="language-sql">$ build/sbt package</code>
+</pre>
+
+Since RaDlog is built on top of Apache Spark, it follows the same building process of Spark. You can build Spark using more than one thread by using the -T option with Maven, see <a href="https://cwiki.apache.org/confluence/display/MAVEN/Parallel+builds+in+Maven+3">"Parallel builds in Maven 3"</a>. More detailed documentation is available from the project site, at <a href="http://spark.apache.org/docs/latest/building-spark.html">"Building Spark"</a>. For developing Spark using an IDE, see <a href="https://cwiki.apache.org/confluence/display/SPARK/Useful+Developer+Tools#UsefulDeveloperTools-Eclipse">Eclipse</a> and <a href="https://cwiki.apache.org/confluence/display/SPARK/Useful+Developer+Tools#UsefulDeveloperTools-IntelliJ">IntelliJ</a>.
+
+<h3 class="cc">2. Run RaDlog Examples</h3>
+An intuitive way to try RaDlog is shown as follows:
+<pre>
+  <code class="language-sql">$./bin/spark-submit --class edu.ucla.cs.wis.bigdatalog.spark.kddlog.LloydClustering --master local[2] ./datalog/target/scala-2.11/spark-datalog_2.11-2.0.3-SNAPSHOT.jar</code>
+</pre>
+<br/>
+
+<h3 class="cc">3. RaDlog Configuration</h3>
+Users can use the following parameters to configure your RaDlog environment
+<table class="center">
+  <tr>
+    <th>Property Name</th>
+    <th>Default</th>
+    <th>Meaning</th>
+  </tr>
+  <tr>
+    <td>spark.sql.sessionState</td>
+    <td>radlog</td>
+    <td>Choose between RaDlog and vanilla Spark mode. (radlog/spark)</td>
+  </tr>
+  <tr>
+    <td>spark.sql.codegen.wholeStage</td>
+    <td>false</td>
+    <td>Enable whole Stage code generation.</td>
+  </tr>
+  <tr>
+    <td>spark.sql.shuffle.partitions</td>
+    <td>1</td>
+    <td>The number of partitions to use when shuffling data for joins or aggregations. <b>Set it to cores-per-node * pinRDDHostLimit to enable the maximum parallelism</b>.</td>
+  </tr>
+  <tr>
+    <td>spark.locality.wait </td>
+    <td>0s</td>
+    <td>How long to wait to launch a data-local task. Note in RaDlog's pinRDD mode, it should be set to 0 as we have Partition-Aware Scheduling.</td>
+  </tr>
+  <tr>
+    <td>spark.datalog.pinRDDHostLimit</td>
+    <td>0</td>
+    <td><b>Any value greater than 0 will enable the pinRDD mode in distributed deployment.</b> In pinRDD mode, each RDD split will be pinned to a specific worker node during the recursive evaluation. This number determines how many workers will be used in pinRDD mode. TODO: remove the hard-coded Hosts file!!!</td>
+  </tr>
+    <tr>
+    <td>spark.datalog.aggrIterType</td>
+    <td>tungsten</td>
+    <td>The aggregate iterator type.</td>
+  </tr>
+    <tr>
+    <td>spark.datalog.packedBroadcast</td>
+    <td>false</td>
+    <td>Enable the packed Broadcast mode.</td>
+  </tr>
+    <tr>
+    <td>spark.datalog.recursion.fixpointTask</td>
+    <td>true</td>
+    <td>Enable the decomposed execution when possible.</td>
+  </tr>
+    <tr>
+    <td>spark.datalog.recursion.maxIterations</td>
+    <td>Int.MaxValue</td>
+    <td>Maximum iterations allowed before reaching the fixpoint.</td>
+  </tr>
+    <tr>
+    <td>spark.datalog.recursion.nonMonotonic</td>
+    <td>false</td>
+    <td>Enable the non-Monotonic computation.</td>
+  </tr>
+</table>
+
+<h3 class="cc">4. Spark Configuration</h3>
+Please refer to the <a href="http://spark.apache.org/docs/latest/configuration.html">Configuration Guide</a> in the online documentation for an overview on how to configure Spark.
+
+<h3 class="cc">5. A Note About Hadoop Versions</h3>
+Spark uses the Hadoop core library to talk to HDFS and other Hadoop-supported storage systems. Because the protocols have changed in different versions of Hadoop, you must build Spark against the same version that your cluster runs.
+
+Please refer to the build documentation at <a href="http://spark.apache.org/docs/latest/building-spark.html#specifying-the-hadoop-version">"Specifying the Hadoop Version"</a> for detailed guidance on building for a particular distribution of Hadoop, including building for particular Hive and Hive Thriftserver distributions.
+</div>
+
 <div id="footer">
   <div class="container">
     <p class="text-muted credit">
-      RaDLog Team at <a href="http://wis.cs.ucla.edu/wis/">University of California, Los Angeles</a>, <abbr title="last build date April 22 2019">2020</abbr>
+      RaDlog Team at <a href="http://wis.cs.ucla.edu/wis/">University of California, Los Angeles</a>, <abbr title="last build date April 22 2019">2020</abbr>
       <!--a href="https://github.com/rasql-web" class="pull-right">Edit this page</a-->
     </p>
   </div>
@@ -559,6 +669,7 @@ SELECT ByCom, OfCom, Tot FROM cshares
     document.getElementById('lang_body').style.display = 'none';
     document.getElementById('example_body').style.display = 'none';
     document.getElementById('pub_body').style.display = 'none';
+    document.getElementById('tutorial_body').style.display = 'none';
   }
 
   function show(id) {
