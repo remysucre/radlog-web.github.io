@@ -268,14 +268,34 @@ max values will be returned. Dual properties hold for <code class="highlighter-r
 <div id="example_body" class="container">
   <!-- <h1>RaSQL (Recursive-aggregate-SQL)</h1> -->
   <h2 id="examples">Knowledge Discovery Examples</h2>
-  <p> We provide a list of data mining and machine learning example queries expressible in RaDlog:
+  <p> We provide a list of data mining and machine learning example queries expressible in RaDlog. We first present the datalog query for implementing knowledge discovery models in RaDlog, then introduce the corresponding library(i.e. KDDLib) to help users build daily knowledge discovery tasks.
 
 <h3 class="cc">1. Frequent Itemset</h3>
+The original algorithm exploits the Apriori property that all nonempty subsets of a frequent itemset must also be frequent. We first describe the simple case where we only need to find those frequent itemsets with two items (i.e.M=2).
+<pre>
+  <code class="language-sql">Relations: trans(Tid: integer, Item: integer).
+  r<sub>1</sub>:pair(Item1, Item2, count&lt;Tid&gt;) &#8592; trans(Tid, Item1), trans(Tid, Item2), Item1&lt;Item2.
+  r<sub>2</sub>:fitset(M, Id, Item1) &#8592; pair(Item1, Item2, TCnt), TCnt&ge;{MS}, M=2, Id= (Item1 opc Item2).
+  r<sub>3</sub>:fitset(M, Id, Item2) &#8592; pair(Item1, Item2, TCnt), TCnt&ge;{MS}, M=2, Id= (Item1 opc Item2).
+  query fitset(M, Id, Item).</code>
+</pre>
+To address the case of M&ge;3, we continue with case M=2, and derive the following frequent itemsets Datalog query:
 
-<pre><code class="language-sql">
-  /*Base table:*/
-  trans(Tid: integer, Item: integer)
-  /*Leverage FrequentItemset() in the library*/
+<pre>
+  <code class="language-sql">Relations: trans(Tid: integer, Item: integer).
+  r<sub>1</sub>:fitset(M, Id, Item) &#8592; init(M, Id, Item).
+  r<sub>2</sub>:ovlp(M, Id1, Id2, count&lt;Item&gt;) &#8592; fitset(M, Id1, Item), fitset(M, Id2, Item), Id1&lt;Id2.
+  r<sub>3</sub>:canset(M, Id1, Id2, Item) &#8592; ovlp(M, Id1, Id2, ItCnt), ItCnt=M-1, fitset(M, Id1, Item).
+  r<sub>4</sub>:canset(M, Id1, Id2, Item) &#8592; ovlp(M, Id1, Id2, ItCnt), ItCnt=M-1, fitset(M, Id2, Item).
+  r<sub>5</sub>:cantrans(M, Id1, Id2, Tid, count&lt;Item&gt;) &#8592; canset(M, Id1, Id2, Item), trans(Tid, Item).
+  r<sub>6</sub>:canfreq(M, Id1, Id2, count&lt;Tid&gt;) &#8592; cantrans(M, Id1, Id2, Tid, ItCnt), ItCnt=M+1.
+  r<sub>7</sub>:fitset(M1, Id, Item) &#8592; canset(M, Id1, Id2, Item), canfreq(M, Id1, Id2, TidCnt), TidCnt&ge;{MS}, Id=(Id1~opc~Id2), M1=M+1.
+
+  query fitset(M, Id, Item).</code>
+</pre>
+
+<p> Leverage FrequentItemset() in the library to retrieve frequent itemsets.
+<pre><code class="language-sql">  ...
   val fis = new FrequentItemset()
   fis.initlizeConfig()
   fis.setMinSupport(10)
@@ -284,14 +304,23 @@ max values will be returned. Dual properties hold for <code class="highlighter-r
   ...
 </code></pre>
 
-<p> The original algorithm exploits the Apriori property that all nonempty subsets of a frequent itemset must also be frequent. To leverage our proposed KDDLib for frequent pattern mining, users can first use <i>initialzeConfig()</i> to set default configurations, or utilize given functions to modify the configurations. With provided path of training data, the computation of frequent itemset is wrapped into <i>run()</i> function.
+<p> To leverage our proposed KDDLib for frequent pattern mining, users can first use <i>initialzeConfig()</i> to set default configurations, or utilize given functions to modify the configurations. With provided path of training data, the computation of frequent itemset is wrapped into <i>run()</i> function.
 
 <h3 class="cc">2. Lloyd Clustering</h3>
+<p> Among the many methods proposed, <i>K-means</i> (a.k.a. Lloyd clustering), still represents one
+of the best known and widely used algorithm, and thus provides a natural candidate for a Datalog implementation.
+In <i>K-means</i>, the default measure of closeness/similarity is the Euclidean distance. In particular, the <i>K-means</i> algorithm in data mining starts with a first group of randomly selected centroids, which are used as the beginning points for every cluster, and then performs iterative (repetitive) calculations to optimize the positions of the centroids. A centroid is the imaginary or real location representing the center of the cluster. The above example takes default configuration and generate trained clustering model as results. We first describe the datalog query for such pursuit:
+<pre>
+  <code class="language-sql">Relations: point(Pno: integer, Dim: integer, Val: double), init(Cno: integer, Dim: integer, Val: double).
+  r<sub>1</sub>:center(0, Cno, Dim, Val) &#8592; init(Cno, Dim, Val).
+  r<sub>2</sub>:dist(J, Pno, Cno, sum&lt;SqDis&gt;) &#8592; point(Pno, Dim, Val),center(J, Cno, Dim, CVal), SqDis=(Val-CVal)*(Val-CVal).
+  r<sub>3</sub>:mdist(J, Pno, min&lt;DSum&gt;, scmin&lt;Cno&gt;) &#8592; dist(J, Pno, Cno, DSum)..
+  r<sub>4</sub>:center(J1, Cno, Dim, avg&lt;Val&gt;) &#8592; point(Pno, Dim, Val), mdist(J, Pno, MDSum, Cno),J&lt;{TH}, J1=J+1.
 
-<pre><code class="language-sql">
-  /*Base tables:*/
-  init(Cno: integer, Dim: integer, Val: double), point(Pno: integer, Dim: integer, Val: double)
-  /*Leverage LloydClustering() in the library*/
+  query center(J, Cno, Dim, Val).</code>
+</pre>
+We continue to show how to leverage LloydClustering() in the library to find centroids for each cluster.
+<pre><code class="language-sql">  ...
   val lc = new LloydClustering()
   lc.initlizeConfig()
   ls.setNumClusters(4)
@@ -300,15 +329,32 @@ max values will be returned. Dual properties hold for <code class="highlighter-r
   val model = lc.train(initPath, pointPath)
   ...
 </code></pre>
-<p> Among the many methods proposed, <i>K-means</i> (a.k.a. Lloyd clustering), still represents one
-of the best known and widely used algorithm, and thus provides a natural candidate for a Datalog implementation.
-In <i>K-means</i>, the default measure of closeness/similarity is the Euclidean distance. In particular, the <i>K-means</i> algorithm in data mining starts with a first group of randomly selected centroids, which are used as the beginning points for every cluster, and then performs iterative (repetitive) calculations to optimize the positions of the centroids. A centroid is the imaginary or real location representing the center of the cluster. The above example takes default configuration and generate trained clustering model as results.
 
 <h3 class="cc">3. Decision Tree</h3>
+<p> Classification is a form of supervised learning on how to best
+categorize data into classes and concepts. Among the many classification techniques available, decision trees 
+represent the most significant and popular method. Our proposed algorithm adopts a greedy (i.e., non-backtracking) approach in which decision trees are built in a top-down recursive divide-and-conquer manner. Thus, the training set is recursively partitioned into smaller subsets based on attribute selection measures (e.g. Gini Index). In above example, we utilize default configuration to construct a decision tree with given training datasets. We first describe the datalog query for building decision tree:
 
+<pre>
+  <code class="language-sql">Relations: train(Tid: integer, Col: integer, Val: integer), dec(Tid: integer, Dec: integer), set(Col: integer, Val: integer), col(Col: integer), init(Cid: integer, Sz: integer, Col: integer, Val: integer).
+  r<sub>1</sub>:pattern(Cid,Sz,Col,Val) &#8592; init(Cid,Sz,Col,Val).
+  r<sub>2</sub>:ext(Cid,Sz,Ncol,count&lt;Col&gt;) &#8592; col(Ncol), pattern(Cid,Sz,Col,Val),Col&lt;&gt;Ncol.
+  r<sub>3</sub>:npat(Cid,Sz,Ncol,Nval,Col,Val) &#8592; ext(Cid,Sz,Ncol,CCnt), pattern(Cid,Sz,Col,Val), set(Ncol, Nval),Sz=CCnt.
+  r<sub>4</sub>:npat(Cid,Sz, Ncol,Nval,Ncol,Nval) &#8592; ext(Cid,Sz,Ncol,CCnt),set(Ncol, Nval),Sz=CCnt.
+  r<sub>5</sub>:candidate(Tid,Cid,Sz,Ncol,count&lt;Val&gt;) &#8592; npat(Cid,Sz,Ncol,Nval,Col,Val), train(Tid,Col,Val).
+  r<sub>6</sub>:countdec(Cid,Sz,Ncol,Nval,Dec,count&lt;Tid&gt;) &#8592; candidate(Tid, Cid, Sz, Ncol, Cv),train(Tid, Ncol, Nval), dec(Tid, Dec), Cv=1.
+  r<sub>7</sub>:gini(Cid, Sz, Ncol, Nval, Gini, Tc) &#8592; countdec(Cid, Sz, Ncol, Nval, Decy, Cy), Decy=1,countdec(Cid, Sz, Ncol, Nval, Decn, Cn),Decn=0,Tc = Cy + Cn, Gini= Tc- Cy*Cy/ Tc - Cn*Cn/Tc.
+  r<sub>8</sub>:totalcol(Cid, Sz, Ncol, sum&lt;Tc&gt;) &#8592; gini(Cid, Sz, Ncol, Nval, Gini, Tc).
+  r<sub>9</sub>:weightgini(Cid, Sz, Ncol, sum&lt;Gi&gt;) &#8592; gini(Cid, Sz, Ncol, Nval, Gini, Tc),totalcol(Cid, Sz, Ncol, Tot), Gi = Gini/Tot.
+  r<sub>10</sub>:select(Cid, Sz, min&lt;WGi&gt;, scmin&lt;Ncol&gt;) &#8592; weightgini(Cid, Sz, Ncol, WGi).
+  r<sub>11</sub>:pattern(Cidx, S1, Col, Val) &#8592; select(Cid, Sz, MGi, Ncol), Sz<{MD},S1=Sz+1,npat(Cid, Sz, Ncol, Nval, Col, Val),Cidx = ((Cid opc Ncol) opc Nval), MGi&gt;{TH}.
+
+  query pattern(Cid,Sz,Col,Val).</code>
+</pre>
+We continue to show how to leverage DecisionTree() in the library to a decision tree with training datasets.
 <pre><code class="language-sql">
   /*Base tables:*/
-  init(ID: integer, Sz: integer, Col: integer, Val: integer, Sid: integer), iset(Sid: integer, Ncol: integer, Nval: integer), expand(Sid: integer, Ncol: integer), train(Tid: integer, Col: integer, Val: integer), dec(Tid: integer, Dec: integer)
+  
   /*Leverage DecisionTree() in the library*/
   val dtree = new DecisionTree()
   dtree.initlizeConfig()
@@ -321,9 +367,7 @@ In <i>K-means</i>, the default measure of closeness/similarity is the Euclidean 
   val model = dtree.trainClassifier(initPath, isetPath, trainPath, decPath, expandPath)
   ...
 </code></pre>
-<p> Classification is a form of supervised learning on how to best
-categorize data into classes and concepts. Among the many classification techniques available, decision trees 
-represent the most significant and popular method. Our proposed algorithm adopts a greedy (i.e., non-backtracking) approach in which decision trees are built in a top-down recursive divide-and-conquer manner. Thus, the training set is recursively partitioned into smaller subsets based on attribute selection measures (e.g. Gini Index). In above example, we utilize default configuration to construct a decision tree with given training datasets.
+
 
   <h2 id="examples">RaSQL Examples</h2>
   <p>We provide a list of example queries expressible with RaSQL: Example 1-3 are classical graph queries; Example 4-8 demonstrate the power of aggregates in recursion to a broad range of application scenarios.</p>
@@ -545,7 +589,7 @@ Download the source code from Github.
   <code class="language-sql">$ git clone https://github.com/radlog-web/radlog.git</code>
 </pre>
 <br/>
-RaDlog is built on Apache Spark using <a href="http://maven.apache.org/">Apache Maven</a>. To build RaDlog and its example programs, run:
+RaDlog is built on Apache Spark using <a href="http://maven.apache.org/">Apache Maven</a>. To build RaDlog and its example programs, please make sure you are using JDK 1.8 or higher in your environment. Then you can run:
 <pre>
   <code class="language-sql">$ cd /PATH-TO-RADLOG/radlog
   $ build/mvn -DskipTests clean package
