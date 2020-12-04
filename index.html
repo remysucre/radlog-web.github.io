@@ -685,6 +685,8 @@ Spark uses the Hadoop core library to talk to HDFS and other Hadoop-supported st
 Please refer to the build documentation at <a href="http://spark.apache.org/docs/latest/building-spark.html#specifying-the-hadoop-version">"Specifying the Hadoop Version"</a> for detailed guidance on building for a particular distribution of Hadoop, including building for particular Hive and Hive Thriftserver distributions.
 </div>
 
+<h3 class="cc">6. Development with IntelliJ Idea</h3>
+To develop RaDlog, we are using the IntelliJ Idea platform. Similar to building on your local machine, you need to build RaDlod using Maven or SBT and then package all compiled files into jar packages in IntelliJ Idea. For each program in RaDlog, the datalog file with the rules is put in a directory(./query). We are wrapping those queries into library. Users can also add their own library by following the same discipline described in radlog/datalog/src/main/scala/edu/ucla/cs/wis/bigdatalog/spark/library.
 <div id="footer">
   <div class="container">
     <p class="text-muted credit">
