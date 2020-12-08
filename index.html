@@ -352,18 +352,16 @@ represent the most significant and popular method. Our proposed algorithm adopts
   query pattern(Cid,Sz,Col,Val).</code>
 </pre>
 We continue to show how to leverage DecisionTree() in the library to a decision tree with training datasets.
-<pre><code class="language-sql">
-  /*Base tables:*/
-  
+<pre><code class="language-sql">  
   /*Leverage DecisionTree() in the library*/
   val dtree = new DecisionTree()
   dtree.initlizeConfig()
   dtree.setImpurity("Gini")
   val initPath = "testdata/dt/pattern.csv"
-  val isetPath = "testdata/dt/iset.csv"
+  val setPath = "testdata/dt/set.csv"
   val trainPath = "testdata/dt/train.csv"
   val decPath = "testdata/dt/dec.csv"
-  val expandPath = "testdata/dt/expand.csv"
+  val colPath = "testdata/dt/col.csv"
   val model = dtree.trainClassifier(initPath, isetPath, trainPath, decPath, expandPath)
   ...
 </code></pre>
